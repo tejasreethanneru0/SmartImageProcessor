@@ -1,0 +1,14 @@
+venv/
+.venv/
+__pycache__/
+*.py[cod]
+.env
+.env.*
+!.env.example
+
+uploads/
+processed/
+history.json
+
+*.pem
+.DS_Store

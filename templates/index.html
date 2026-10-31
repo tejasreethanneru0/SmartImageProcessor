@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Upload, resize, crop, compress and edit images locally.">
+    <title>Smart Image Processor</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+    <div class="app-shell">
+        <header class="hero">
+            <div class="eyebrow">PYTHON · FLASK · PILLOW</div>
+            <h1>Smart Image <span>Processor</span></h1>
+            <p>One simple workspace to resize, crop, enhance and convert your images.</p>
+        </header>
+
+        <main>
+            <section class="panel upload-panel">
+                <div class="section-heading">
+                    <div><span class="step">01</span><h2>Upload an image</h2></div>
+                    <span class="hint">JPG · PNG · WEBP · Max 15 MB</span>
+                </div>
+                <form id="uploadForm">
+                    <label class="drop-zone" for="imageInput">
+                        <span class="upload-icon">↑</span>
+                        <strong>Choose an image from your device</strong>
+                        <span id="fileName">No file selected</span>
+                        <input id="imageInput" name="image" type="file" accept="image/jpeg,image/png,image/webp" required>
+                    </label>
+                    <button class="button primary" id="uploadButton" type="submit">Upload image</button>
+                </form>
+                <p class="status" id="uploadStatus" role="status"></p>
+            </section>
+
+            <section class="workspace">
+                <section class="panel preview-panel">
+                    <div class="section-heading">
+                        <div><span class="step">02</span><h2>Preview</h2></div>
+                        <span class="hint" id="imageMeta">Upload an image to begin</span>
+                    </div>
+                    <div class="preview-grid">
+                        <div class="preview-box">
+                            <div class="preview-label">ORIGINAL</div>
+                            <div class="image-stage"><img id="originalPreview" alt="Original image preview" hidden><span id="originalPlaceholder">Your original image appears here</span></div>
+                        </div>
+                        <div class="preview-box">
+                            <div class="preview-label">CURRENT RESULT</div>
+                            <div class="image-stage"><img id="currentPreview" alt="Current processed image preview" hidden><span id="currentPlaceholder">Processed result appears here</span></div>
+                        </div>
+                    </div>
+                    <div class="preview-actions">
+                        <button class="button secondary" id="resetButton" type="button" disabled>Reset to original</button>
+                        <a class="button download disabled" id="downloadButton" href="#" download aria-disabled="true">Download result</a>
+                    </div>
+                </section>
+
+                <section class="panel tools-panel">
+                    <div class="section-heading">
+                        <div><span class="step">03</span><h2>Image tools</h2></div>
+                        <span class="hint">Each action uses the current result</span>
+                    </div>
+
+                    <div class="tool-grid">
+                        <article class="tool-card">
+                            <h3>↔ Resize</h3>
+                            <p>Change dimensions while keeping the aspect ratio.</p>
+                            <div class="fields">
+                                <label>Width (px)<input id="resizeWidth" type="number" min="1" max="10000" value="800"></label>
+                                <label class="check-label"><input id="keepRatio" type="checkbox" checked> Keep aspect ratio</label>
+                                <label id="heightField" hidden>Height (px)<input id="resizeHeight" type="number" min="1" max="10000" value="600"></label>
+                            </div>
+                            <button class="button primary process-button" data-action="resize">Resize image</button>
+                        </article>
+
+                        <article class="tool-card">
+                            <h3>◩ Compress</h3>
+                            <p>Reduce file size by adjusting JPEG quality.</p>
+                            <label>Quality: <strong id="qualityValue">75</strong>%<input id="quality" type="range" min="10" max="95" value="75"></label>
+                            <button class="button primary process-button" data-action="compress">Compress image</button>
+                        </article>
+
+                        <article class="tool-card">
+                            <h3>▣ Crop</h3>
+                            <p>Enter a crop rectangle in pixels, measured from the top-left.</p>
+                            <div class="four-fields">
+                                <label>Left<input id="cropLeft" type="number" min="0" value="0"></label>
+                                <label>Top<input id="cropTop" type="number" min="0" value="0"></label>
+                                <label>Right<input id="cropRight" type="number" min="1" value="500"></label>
+                                <label>Bottom<input id="cropBottom" type="number" min="1" value="500"></label>
+                            </div>
+                            <button class="button primary process-button" data-action="crop">Crop image</button>
+                        </article>
+
+                        <article class="tool-card">
+                            <h3>⟳ Rotate & flip</h3>
+                            <p>Rotate clockwise or mirror the image.</p>
+                            <div class="fields">
+                                <label>Rotation<select id="rotation"><option value="90">90°</option><option value="180">180°</option><option value="270">270°</option></select></label>
+                                <label>Flip<select id="flipDirection"><option value="horizontal">Horizontal</option><option value="vertical">Vertical</option></select></label>
+                            </div>
+                            <div class="button-row">
+                                <button class="button primary process-button" data-action="rotate">Rotate</button>
+                                <button class="button secondary process-button" data-action="flip">Flip</button>
+                            </div>
+                        </article>
+
+                        <article class="tool-card">
+                            <h3>◉ Convert format</h3>
+                            <p>Save the current image in another format.</p>
+                            <label>Output format<select id="outputFormat"><option value="JPEG">JPG</option><option value="PNG">PNG</option><option value="WEBP">WEBP</option></select></label>
+                            <button class="button primary process-button" data-action="convert">Convert image</button>
+                        </article>
+
+                        <article class="tool-card">
+                            <h3>☼ Brightness & contrast</h3>
+                            <p>Use 1.0 for the original level. Values range from 0 to 2.</p>
+                            <label>Brightness: <strong id="brightnessValue">1.0</strong><input id="brightness" type="range" min="0" max="2" step="0.1" value="1"></label>
+                            <label>Contrast: <strong id="contrastValue">1.0</strong><input id="contrast" type="range" min="0" max="2" step="0.1" value="1"></label>
+                            <button class="button primary process-button" data-action="adjust">Apply adjustments</button>
+                        </article>
+
+                        <article class="tool-card">
+                            <h3>✧ Filters</h3>
+                            <p>Apply a visual effect to the current image.</p>
+                            <label>Filter<select id="filterEffect"><option value="grayscale">Grayscale</option><option value="sepia">Sepia</option><option value="blur">Blur</option><option value="sharpen">Sharpen</option></select></label>
+                            <label id="blurField" hidden>Blur radius<input id="blurRadius" type="number" min="0" max="20" step="0.5" value="2"></label>
+                            <button class="button primary process-button" data-action="filter">Apply filter</button>
+                        </article>
+                    </div>
+                    <p class="status" id="processStatus" role="status"></p>
+                </section>
+
+                <section class="panel history-panel">
+                    <div class="section-heading">
+                        <div><span class="step">04</span><h2>Processing history</h2></div>
+                        <button class="text-button" id="clearHistory" type="button">Clear history</button>
+                    </div>
+                    <div id="historyList" class="history-list"><p class="empty-history">Your processed images will appear here.</p></div>
+                </section>
+            </section>
+        </main>
+
+        <footer>Smart Image Processor · Built with Python, Flask and Pillow</footer>
+    </div>
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>
